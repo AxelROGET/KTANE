@@ -1,52 +1,98 @@
-#include <Wire.h>
-#include <string.h>
+#include <Wire.h> 
 
 #define START 1
+
+#define ID_MAX_MODULE 5 // ID du dernier module existant (commence à 1)
 
 unsigned char started = 0;
 char buffer[100];
 char index = 0;
+char modulesConnected[ID_MAX_MODULE+1];
+
+
+void scanModules(char * modules);
+bool isModuleConnected(char);
 
 void setup() {
-  Serial.begin(9600);
+
+  for(char i=0; i<ID_MAX_MODULE; i++) modulesConnected[i] = 0;
+
+  Wire.begin();
+
+	Serial.begin(9600);
+	Serial.println("KTANE");
 }
 
 void loop() {
-    delay(1000);
-    Serial.println("Loop");
-  if (!started) {
-    if (Serial.available() > 0) {
-      if (Serial.read() == 1) {
-        Serial.println("Lancement du jeu");
-         /**
-          * TODO : start le jeu
-         */
-      } else {
-        /**
-         * ! Mode configuration
-        */
-        Serial.println("Mode configuration");
-        unsigned char addr = Serial.read();
-        unsigned char values[10];
-        unsigned char index = 0;
-        while(Serial.available() > 0 && index < 10) {
-            values[index] = Serial.read();
-            index++;
-        }
+	if (!started) {
+		if (Serial.available() > 0) {
+			if (Serial.read() == 1) {
+				Serial.println("Lancement du jeu");
+				 /**
+					* TODO : start le jeu
+				 */
+			} else {
+				/**
+				 * ! Mode configuration
+				*/
+				Serial.println("Mode configuration");
+				unsigned char addr = Serial.read();
+				unsigned char values[10];
+				unsigned char index = 0;
+				while(Serial.available() > 0 && index < 10) {
+						values[index] = Serial.read();
+						index++;
+				}
 
-        Serial.println("Addr : " + (short int)addr);
-        Serial.println("Values : ");
-        for(int i = 0; i < index; i++) {
-            Serial.println((short int)values[i]);
-        }
+				Serial.println("Addr : " + (short int)addr);
+				Serial.println("Values : ");
+				for(int i = 0; i < index; i++) {
+						Serial.println((short int)values[i]);
+				}
 
-        /**
-         ** Envoyer les valeurs au module addr
-        */
-        Wire.beginTransmission(addr);
-        Wire.write(values, index);
-        Wire.endTransmission();
-      }
+				/**
+				 ** Envoyer les valeurs au module addr
+				 * TODO : vérifier que le module est bien connecté en I2C 
+				*/
+				Wire.beginTransmission(addr);
+				Wire.write(values, index);
+				Wire.endTransmission();
+			}
+		}
+
+		scanModules(modulesConnected);
+
+    delay(10000);
+	}
+}
+
+void scanModules(char * modules) {
+
+	//Serial.println("Lancement du scan des modules");
+
+  for(char addr=0; addr <= ID_MAX_MODULE; addr++) {
+    if(isModuleConnected(addr)) {
+      modules[addr] = 1;
+    } else {
+      modules[addr] = 0;
     }
   }
+
+  Serial.print("{ modulesConnected: { " );
+  for(char addr=0; addr <= ID_MAX_MODULE; addr++) {
+    Serial.print((int)addr);
+    Serial.print(": ");
+    Serial.print((int)modules[addr]);
+    Serial.print(", ");
+  }
+  Serial.println("} }");
+	
+}
+
+bool isModuleConnected(char module_addr){
+  Wire.beginTransmission(module_addr); 
+  if(Wire.endTransmission() == 0) {
+    return true;
+  } 
+  return false;
 }
