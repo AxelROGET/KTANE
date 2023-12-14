@@ -26,7 +26,43 @@ function traitementBuffer(data) {
 
     var string = data.map(value => String.fromCharCode(value)).join("");
 
-    console.log(string);
+    // console.log(string);
+
+    try {
+        var json = JSON.parse(string);
+        console.log(json);
+
+        if(json.modules) {
+            Object.keys(json.modules).forEach(id => {
+                
+                if(json.modules[id] == '-1' && getModuleConnected(id)) {
+                    removeModuleConnected(id);
+
+                    // Supprimer le SVG
+                    $(`svg[data-id=${id}]`).remove();
+                }
+
+                else if(json.modules[id] != '-1' && !getModuleConnected(id) && getModuleAvailable(id)) {
+                    addModuleConnected(new (getModuleAvailable(id))());
+
+                    // Ajouter le SVG par défaut :
+                    let svg = $(getModuleConnected(id).getDefaultSvg()); 
+                    // Append le SVG avec en data-id l'id du module
+                    svg.attr("data-id", id)
+                    .on("click", function() {
+                        // Configurer le module
+                        getModuleConnected(id).generateSolution();
+                    })
+                    .css("cursor", "pointer")
+                    .appendTo("#modules");
+                    
+                }
+            })
+        }
+    } catch {
+        console.error("Erreur lors du traitement du buffer");
+        console.log(string);
+    }
 
 }
 
@@ -61,8 +97,12 @@ function requestSerial(button) {
                 const reader = port.readable.getReader();
                 reader.read().then(function processText({ done, value }) {
                     appendBuffer(value);
+                    reader.read().then(processText).catch((error) => {
+                        reader.read().then(processText);
+                    })
+                }).catch((error) => {
                     reader.read().then(processText);
-                });
+                })
                 writer = port.writable.getWriter();
             });
         });

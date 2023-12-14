@@ -5,22 +5,23 @@
 #define ID_MAX_MODULE 5 // ID du dernier module existant (commence à 1)
 
 unsigned char started = 0;
-char buffer[100];
-char index = 0;
-char modulesConnected[ID_MAX_MODULE+1];
+unsigned char buffer[100];
+unsigned char index = 0;
+unsigned char modulesConnected[ID_MAX_MODULE+1];
 
 
-void scanModules(char * modules);
-bool isModuleConnected(char);
+void scanModules(unsigned char * modules);
+bool isModuleConnected(unsigned char);
+unsigned char getModuleState(unsigned char module_addr);
 
 void setup() {
 
-  for(char i=0; i<ID_MAX_MODULE; i++) modulesConnected[i] = 0;
+  for(unsigned char i=0; i<ID_MAX_MODULE; i++) modulesConnected[i] = 0;
 
   Wire.begin();
 
 	Serial.begin(9600);
-	Serial.println("KTANE");
+	// Serial.println("KTANE");
 }
 
 void loop() {
@@ -44,7 +45,8 @@ void loop() {
 						index++;
 				}
 
-				Serial.println("Addr : " + (short int)addr);
+				Serial.print("Addr : ");
+        Serial.println((short int)addr);
 				Serial.println("Values : ");
 				for(int i = 0; i < index; i++) {
 						Serial.println((short int)values[i]);
@@ -62,37 +64,46 @@ void loop() {
 
 		scanModules(modulesConnected);
 
-    delay(10000);
+    delay(1000);
 	}
 }
 
-void scanModules(char * modules) {
+void scanModules(unsigned char * modules) {
 
 	//Serial.println("Lancement du scan des modules");
 
-  for(char addr=0; addr <= ID_MAX_MODULE; addr++) {
-    if(isModuleConnected(addr)) {
-      modules[addr] = 1;
-    } else {
-      modules[addr] = 0;
-    }
-  }
+	Serial.print("{ \"modules\": {");
 
-  Serial.print("{ modulesConnected: { " );
-  for(char addr=0; addr <= ID_MAX_MODULE; addr++) {
-    Serial.print((int)addr);
-    Serial.print(": ");
-    Serial.print((int)modules[addr]);
-    Serial.print(", ");
-  }
-  Serial.println("} }");
+	for(unsigned char addr=0; addr <= ID_MAX_MODULE; addr++) {
+    Serial.print("\"");
+    Serial.print((short int)addr);
+    Serial.print("\":");
+		if(isModuleConnected(addr)) {
+			modules[addr] = 1;
+      Serial.print("\"");
+      Serial.print(getModuleState(addr));
+      Serial.print("\"");
+		} else {
+			modules[addr] = 0;
+      Serial.print("\"-1\"");
+		}
+
+    if(addr < ID_MAX_MODULE) Serial.print(",");
+	}
+
+	Serial.println("}}");
 	
 }
 
-bool isModuleConnected(char module_addr){
+bool isModuleConnected(unsigned char module_addr){
   Wire.beginTransmission(module_addr); 
   if(Wire.endTransmission() == 0) {
     return true;
   } 
   return false;
+}
+
+unsigned char getModuleState(unsigned char module_addr) {
+	Wire.requestFrom((int)module_addr, 1);
+	return Wire.read();
 }
