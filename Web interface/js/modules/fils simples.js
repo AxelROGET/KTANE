@@ -139,6 +139,8 @@ class Fils_Simples extends Module {
 
         refreshModulesDiv();
 
+        configureModule(this.id, this.solution, this.nbFils);
+
     }
 }
 
