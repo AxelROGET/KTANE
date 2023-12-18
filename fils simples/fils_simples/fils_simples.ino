@@ -21,12 +21,10 @@ char state = 3;
 char wireToCut = 0;
 char nbWires = 0;
 
-int wireRemoved1 = 0;
-int wireRemoved2 = 0;
-
 bool flag=false;
 
 byte receivedBytes[BUFFER_SIZE];
+bool wiresState[6];
 
 void requestEvent();
 void receiveEvent(int);
@@ -67,11 +65,16 @@ void loop() {
       else if(digitalRead(pin) && pin-1 <= nbWires) flag=false;
     }
 
+    // Si la configuration est bonne
     if(flag) {
       flag=false;
       digitalWrite(13, HIGH);
       Serial.println("Led allumée");
       state=STATE_PRET;
+
+      for(int i=0; i<=6; i++) {
+        wiresState[i] = digitalRead(i+2);
+      }
     }
   }
 
@@ -83,23 +86,29 @@ void loop() {
     // Si le bon fil est débranché
     if(digitalRead(wireToCut)) {
       state = STATE_DESARME;
+      digitalWrite(13, HIGH);
     }
 
     for(int wire=1; wire<=nbWires; wire++){
       // Si le fil est nouvellement débranché (erreur commise)
-      if(digitalRead(wire+1) && wire != wireToCut) {
-        
+      if(wireToCut != wire && digitalRead(wire+1) && !wiresState[wire]) {
+        state = STATE_ERREUR;
       }
+      wiresState[wire] = digitalRead(wire+1);
     }
 
   }
 
 
-  delay(500);
+  delay(100);
 }
 
 void requestEvent() {
   Wire.write(state);
+
+  if(state == STATE_ERREUR) {
+    state = STATE_RAS;
+  } 
 }
 
 void receiveEvent(int size) {
@@ -108,6 +117,14 @@ void receiveEvent(int size) {
     for(int i=0; i<size; i++) {
       receivedBytes[i] = Wire.read();
     }
+    
+    // Si l'octet de lancement est reçu
+    if(size > 0 && receivedBytes[0] == 0 && state == STATE_PRET) {
+      state = STATE_RAS;
+      digitalWrite(13, LOW);
+      return;
+    }
+
     for(int i=0; i<size;i++){
       if(i==0){
         wireToCut=receivedBytes[i];
