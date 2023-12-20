@@ -14,7 +14,10 @@
 #define STATE_PRET 4
 
 #define BUFFER_SIZE 4
+
+#include <Arduino.h>
 #include <Wire.h>
+
 
 char state = 3;
 
@@ -30,117 +33,131 @@ void requestEvent();
 void receiveEvent(int);
 
 void setup() {
-  // put your setup code here, to run once:
-  Wire.begin(MODULE_ADDR);
-  Wire.onRequest(requestEvent);
-  Wire.onReceive(receiveEvent);
+	Wire.begin(MODULE_ADDR);
+	Wire.onRequest(requestEvent);
+	Wire.onReceive(receiveEvent);
 
-  Serial.begin(9600);
+	Serial.begin(9600);
 
-  pinMode(2, INPUT_PULLUP);
-  pinMode(3, INPUT_PULLUP);
-  pinMode(4, INPUT_PULLUP);
-  pinMode(5, INPUT_PULLUP);
-  pinMode(6, INPUT_PULLUP);
-  pinMode(7, INPUT_PULLUP);
+	pinMode(2, INPUT_PULLUP);
+	pinMode(3, INPUT_PULLUP);
+	pinMode(4, INPUT_PULLUP);
+	pinMode(5, INPUT_PULLUP);
+	pinMode(6, INPUT_PULLUP);
+	pinMode(7, INPUT_PULLUP);
 
-  pinMode(13, OUTPUT);
-  digitalWrite(13, LOW);
+	pinMode(13, OUTPUT);
+	digitalWrite(13, LOW);
 }
 
 void loop() {
-  /**
-    * ! CONFIGURATION DU MODULE
-    */
-  if(state == STATE_ATTENTE_CONFIGURATION && wireToCut > 0 && nbWires >= 3) {
-    flag=true;
-    for(int i=0; i<6; i++) {
-      Serial.print("pin : ");
-      Serial.print(i+2);
-      Serial.print(" ; state : ");
-      Serial.println(digitalRead(i+2));
-      if(!digitalRead(i+2) && i >= nbWires) {
-        flag=false;
-      }
-      else if(digitalRead(i+2) && i < nbWires) flag=false;
-    }
+	/**
+	* ! CONFIGURATION DU MODULE
+	* Vérifier que les fils soient bien branchés pour que le module soit armé lorsque la solution est reçue
+	*/
+	if((state == STATE_ATTENTE_CONFIGURATION || state == STATE_PRET) && wireToCut > 0 && nbWires >= 3) {
 
-    // Si la configuration est bonne
-    if(flag) {
-      flag=false;
-      digitalWrite(13, HIGH);
-      Serial.println("Led allumée");
-      state=STATE_PRET;
+		flag=true;
+		for(int i=0; i<6; i++) {
 
-      for(int i=0; i<6; i++) {
-        wiresState[i] = digitalRead(i+2);
-      }
-    }
-  }
+			Serial.print("pin : ");
+			Serial.print(i+2);
+			Serial.print(" ; state : ");
+			Serial.println(digitalRead(i+2));
 
-  /**
-    * ! MODULE ARME
-    */
-  else if (state == STATE_RAS) {
+			if(!digitalRead(i+2) && i >= nbWires) flag=false;
+			else if(digitalRead(i+2) && i < nbWires) flag=false;
 
-    // Si le bon fil est débranché
-    if(digitalRead(wireToCut)) {
-      state = STATE_DESARME;
-      digitalWrite(13, HIGH);
-    }
+		}
 
-    for(int wire=1; wire<=nbWires; wire++){
-      // Si le fil est nouvellement débranché (erreur commise)
-      if(wireToCut != wire && digitalRead(wire+1) && !wiresState[wire]) {
-        state = STATE_ERREUR;
-      }
-      wiresState[wire] = digitalRead(wire+1);
-    }
+		// Si la configuration est conforme, alors on arme le module
+		if(flag) {
 
-  }
+			state=STATE_PRET;
+			digitalWrite(13, HIGH);
+			
+			for(int i=0; i<6; i++) {
+				wiresState[i] = digitalRead(i+2);
+			}
+
+		} 
+
+		// Si la configuration est non conforme, alors on désarme le module
+		else if (state == STATE_PRET) {
+			state = STATE_ATTENTE_CONFIGURATION;
+			digitalWrite(13, LOW);
+		}
 
 
-  delay(100);
+	}
+
+	/**
+	* ! MODULE ARMÉ JEU LANCÉ
+	* Vérifier que le bon foit soit débranché 
+	*/
+	else if (state == STATE_RAS) {
+
+		// Si le bon fil est débranché
+		if(digitalRead(wireToCut)) {
+			state = STATE_DESARME;
+			digitalWrite(13, HIGH);
+		}
+
+		for(int wire=1; wire<=nbWires; wire++){
+			// Si le fil est nouvellement débranché (erreur commise)
+			if(wireToCut != wire && digitalRead(wire+1) && !wiresState[wire]) {
+				state = STATE_ERREUR;
+			}
+			wiresState[wire] = digitalRead(wire+1);
+		}
+
+	}
+
+
+	delay(20);
 }
 
 void requestEvent() {
-  Wire.write(state);
+	Wire.write(state);
 
-  if(state == STATE_ERREUR) {
-    state = STATE_RAS;
-  } 
+	if(state == STATE_ERREUR) {
+		state = STATE_RAS;
+	} 
 }
 
 void receiveEvent(int size) {
-  if(Wire.available() >= size) {
-    for(int i=0; i<size; i++) {
-      receivedBytes[i] = Wire.read();
-    }
+	if(Wire.available() >= size) {
+		for(int i=0; i<size; i++) {
+			receivedBytes[i] = Wire.read();
+		}
     
 
-    /**
-      * Détection du lancement
-      */
-    if(size > 0 && receivedBytes[0] == 0 && state == STATE_PRET) {
-      state = STATE_RAS;
-      digitalWrite(13, LOW);
-      return;
-    }
+		/**
+		 ** Si lancement du jeu
+		 */
+		if(size > 0 && receivedBytes[0] == 0 && state == STATE_PRET) {
+			state = STATE_RAS;
+			digitalWrite(13, LOW);
+			return;
+		}
 
-    /**
-      * Si configuration du module
-      */
-    if(size != 2) return;
-    for(int i=0; i<size;i++){
-      if(i==0){
-        wireToCut=receivedBytes[i];
-      } else if (i==1) {
-        nbWires=receivedBytes[i];
-      }
+		/**
+		 ** Si configuration du module
+		 */
+		if(size != 2) return;
 
-    }
-    // Serial.println();
-  } else {
-    Serial.println("Erreur : pas assez d'octets pour remplir le tableau.");
-  }
+
+		for(int i=0; i<size;i++){
+
+			if(i==0){
+				wireToCut=receivedBytes[i];
+			} else if (i==1) {
+				nbWires=receivedBytes[i];
+			}
+
+		}
+
+	} else {
+		Serial.println("Erreur");
+	}
 }
