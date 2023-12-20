@@ -1,10 +1,11 @@
 #include <Wire.h> 
+#include <Arduino.h>
 
 #define START 1
 
 #define ID_MAX_MODULE 5 // ID du dernier module existant (commence à 1)
 
-unsigned char started = 0;
+bool started = false;
 unsigned char buffer[100];
 unsigned char index = 0;
 unsigned char modulesConnected[ID_MAX_MODULE+1];
@@ -16,7 +17,7 @@ unsigned char getModuleState(unsigned char module_addr);
 
 void setup() {
 
-  for(unsigned char i=0; i<ID_MAX_MODULE; i++) modulesConnected[i] = 0;
+  for(unsigned char i=1; i<ID_MAX_MODULE; i++) modulesConnected[i] = 0;
 
   Wire.begin();
 
@@ -29,9 +30,21 @@ void loop() {
 		if (Serial.available() > 0) {
 			if (Serial.read() == 1) {
 				Serial.println("Lancement du jeu");
-				 /**
-					* TODO : start le jeu
-				 */
+				/**
+				* TODO : start le jeu
+				* Scan des modules connectés
+				* Lancer si tous les modules sont prêts (état 4)
+				*/
+				for(int i = 1; i <= ID_MAX_MODULE; i++) {
+					if(isModuleConnected(i) && getModuleState(i) == 4) {
+						started = true;
+						Serial.println("Jeu lancé");
+					} else {
+						started = false;
+						break;
+					}
+				}
+
 			} else {
 				/**
 				 * ! Mode configuration
@@ -46,9 +59,9 @@ void loop() {
 				}
 
 				Serial.print("Addr : ");
-        Serial.println((short int)addr);
+        		Serial.println((short int)addr);
 				Serial.println("Values : ");
-				for(int i = 0; i < index; i++) {
+				for(int i = 1; i < index; i++) {
 						Serial.println((short int)values[i]);
 				}
 
@@ -74,7 +87,7 @@ void scanModules(unsigned char * modules) {
 
 	Serial.print("{ \"modules\": {");
 
-	for(unsigned char addr=0; addr <= ID_MAX_MODULE; addr++) {
+	for(unsigned char addr=1; addr <= ID_MAX_MODULE; addr++) {
     Serial.print("\"");
     Serial.print((short int)addr);
     Serial.print("\":");

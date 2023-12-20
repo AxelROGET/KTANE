@@ -2,22 +2,14 @@ var buffer = [];
 
 var writer;
 
-/**
- * @param {Number} data
- * @description Envoie des données au port série
- */
-function sendSerial(...bytes) {
-    if (!writer) {
-        console.error("Pas de port série ouvert.");
-    }
-    var data = new Uint8Array(bytes);
-    writer.write(data).then(() => {
-        console.log("Données envoyées");
-    }).catch((error) => {
-        console.error("Erreur lors de l'envoi des données", error);
-    });
+const STATE_NON_CONNECTE = -1;
+const STATE_RAS = 0;
+const STATE_DESARME = 1;
+const STATE_ERREUR = 2;
+const STATE_ATTENTE_CONFIGURATION = 3;
+const STATE_PRET = 4;
 
-}
+
 
 /**
  * @param {Array.<Number>} data
@@ -32,17 +24,31 @@ function traitementBuffer(data) {
         var json = JSON.parse(string);
         console.log(json);
 
+        /**
+         * ! ETATS DES MODULES
+         */
         if(json.modules) {
+
+            let ready = true;
+            
+
             Object.keys(json.modules).forEach(id => {
+                // TODO si un module est déconnecté reconnecté sans qu'il soit détecté, renvoyer sa configuration
                 
-                if(json.modules[id] == '-1' && getModuleConnected(id)) {
+                /**
+                 ** Si le module a été déconnecté, on le supprime de la page
+                 */
+                if(json.modules[id] == STATE_NON_CONNECTE && getModuleConnected(id)) {
                     removeModuleConnected(id);
 
                     // Supprimer le SVG
                     $(`svg[data-id=${id}]`).remove();
                 }
 
-                else if(json.modules[id] != '-1' && !getModuleConnected(id) && getModuleAvailable(id)) {
+                /**
+                 ** Si un nouveau module est connecté, on l'ajoute à la page
+                 */
+                else if(json.modules[id] != STATE_NON_CONNECTE && !getModuleConnected(id) && getModuleAvailable(id)) {
                     addModuleConnected(new (getModuleAvailable(id))());
 
                     // Ajouter le SVG par défaut :
@@ -57,7 +63,25 @@ function traitementBuffer(data) {
                     .appendTo("#modules");
                     
                 }
+
+
+                if(json.modules[id] == STATE_ATTENTE_CONFIGURATION) {
+                    ready = false;
+                }
+
             })
+
+
+            if(ready) {
+                $("#ready button").prop("disabled", false);
+                $("#ready button").prop("title", "Lancer la partie");
+                
+            } else {
+                $("#ready button").prop("disabled", true);
+                $("#ready button").prop("title", "Veuillez configurer tous les modules pour pouvoir lancer la partie.");
+            }
+
+
         }
     } catch {
         console.error("Erreur lors du traitement du buffer");
@@ -65,6 +89,16 @@ function traitementBuffer(data) {
     }
 
 }
+
+$(function () {
+    $("<button>").text("Se connecter").on("click", function () {
+        requestSerial(this);
+    }).appendTo("body");
+
+    $("#ready button").on("click", function() {
+        sendSerial(0x01);
+    })
+});
 
 /**
  * @param {ArrayBuffer} data 
@@ -101,16 +135,28 @@ function requestSerial(button) {
                         reader.read().then(processText);
                     })
                 }).catch((error) => {
+                    console.error("Une erreur s'est produite", error)
                     reader.read().then(processText);
                 })
                 writer = port.writable.getWriter();
             });
-        });
+        })
     }
 }
 
-$(function () {
-    $("<button>").text("Se connecter").on("click", function () {
-        requestSerial(this);
-    }).appendTo("body");
-});
+/**
+ * @param {Number} data
+ * @description Envoie des données au port série
+ */
+function sendSerial(...bytes) {
+    if (!writer) {
+        console.error("Pas de port série ouvert.");
+    }
+    var data = new Uint8Array(bytes);
+    writer.write(data).then(() => {
+        console.log("Données envoyées");
+    }).catch((error) => {
+        console.error("Erreur lors de l'envoi des données", error);
+    });
+
+}
