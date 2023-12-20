@@ -54,15 +54,15 @@ void loop() {
     */
   if(state == STATE_ATTENTE_CONFIGURATION && wireToCut > 0 && nbWires >= 3) {
     flag=true;
-    for(int pin=2; pin<=6; pin++) {
+    for(int i=0; i<6; i++) {
       Serial.print("pin : ");
-      Serial.print(pin);
+      Serial.print(i+2);
       Serial.print(" ; state : ");
-      Serial.println(digitalRead(pin));
-      if(!digitalRead(pin) && pin-1 > nbWires) {
+      Serial.println(digitalRead(i+2));
+      if(!digitalRead(i+2) && i >= nbWires) {
         flag=false;
       }
-      else if(digitalRead(pin) && pin-1 <= nbWires) flag=false;
+      else if(digitalRead(i+2) && i < nbWires) flag=false;
     }
 
     // Si la configuration est bonne
@@ -72,7 +72,7 @@ void loop() {
       Serial.println("Led allumée");
       state=STATE_PRET;
 
-      for(int i=0; i<=6; i++) {
+      for(int i=0; i<6; i++) {
         wiresState[i] = digitalRead(i+2);
       }
     }
@@ -112,19 +112,25 @@ void requestEvent() {
 }
 
 void receiveEvent(int size) {
-  if(size < 2) return;
   if(Wire.available() >= size) {
     for(int i=0; i<size; i++) {
       receivedBytes[i] = Wire.read();
     }
     
-    // Si l'octet de lancement est reçu
+
+    /**
+      * Détection du lancement
+      */
     if(size > 0 && receivedBytes[0] == 0 && state == STATE_PRET) {
       state = STATE_RAS;
       digitalWrite(13, LOW);
       return;
     }
 
+    /**
+      * Si configuration du module
+      */
+    if(size != 2) return;
     for(int i=0; i<size;i++){
       if(i==0){
         wireToCut=receivedBytes[i];
