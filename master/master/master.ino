@@ -38,11 +38,21 @@ void loop() {
 				for(int i = 1; i <= ID_MAX_MODULE; i++) {
 					if(isModuleConnected(i) && getModuleState(i) == 4) {
 						started = true;
-						Serial.println("Jeu lancé");
 					} else {
 						started = false;
 						break;
 					}
+				}
+
+				if(started) {
+					Serial.println("Jeu lancé");
+					for(int i = 1; i <= ID_MAX_MODULE; i++) {
+						if(isModuleConnected(i) && getModuleState(i) == 4) {
+							
+						}
+					}
+				} else {
+					Serial.println("Jeu non lancé");
 				}
 
 			} else {
