@@ -19,7 +19,7 @@
 #include <Wire.h>
 
 
-char state = 3;
+char state;
 
 char wireToCut = 0;
 char nbWires = 0;
@@ -48,22 +48,30 @@ void setup() {
 
 	pinMode(13, OUTPUT);
 	digitalWrite(13, LOW);
+
+  state = 3;
 }
 
 void loop() {
+
+  //Serial.print("Module state : ");
+  // Serial.println((short int) state);
 	/**
 	* ! CONFIGURATION DU MODULE
 	* Vérifier que les fils soient bien branchés pour que le module soit armé lorsque la solution est reçue
 	*/
-	if((state == STATE_ATTENTE_CONFIGURATION || state == STATE_PRET) && wireToCut > 0 && nbWires >= 3) {
+
+	if(((state == STATE_ATTENTE_CONFIGURATION) || (state == STATE_PRET)) && (wireToCut > 0 && nbWires >= 3)) {
 
 		flag=true;
 		for(int i=0; i<6; i++) {
 
+      /*
 			Serial.print("pin : ");
 			Serial.print(i+2);
 			Serial.print(" ; state : ");
 			Serial.println(digitalRead(i+2));
+      */
 
 			if(!digitalRead(i+2) && i >= nbWires) flag=false;
 			else if(digitalRead(i+2) && i < nbWires) flag=false;
@@ -71,9 +79,10 @@ void loop() {
 		}
 
 		// Si la configuration est conforme, alors on arme le module
-		if(flag) {
+		if(flag && state != STATE_RAS && state != STATE_ERREUR) {
 
-			state=STATE_PRET;
+      state = STATE_PRET;
+
 			digitalWrite(13, HIGH);
 			
 			for(int i=0; i<6; i++) {
@@ -95,6 +104,7 @@ void loop() {
 	* ! MODULE ARMÉ JEU LANCÉ
 	* Vérifier que le bon foit soit débranché 
 	*/
+  /*
 	else if (state == STATE_RAS) {
 
 		// Si le bon fil est débranché
@@ -112,9 +122,10 @@ void loop() {
 		}
 
 	}
+  */
 
 
-	delay(20);
+  delay(20);
 }
 
 void requestEvent() {
@@ -126,17 +137,23 @@ void requestEvent() {
 }
 
 void receiveEvent(int size) {
+  if(size == 0) return;
+  Serial.print("ReceiveEvent, size = ");
+  Serial.println(size);
 	if(Wire.available() >= size) {
 		for(int i=0; i<size; i++) {
 			receivedBytes[i] = Wire.read();
+      Serial.println(receivedBytes[i]);
 		}
     
 
 		/**
 		 ** Si lancement du jeu
 		 */
-		if(size > 0 && receivedBytes[0] == 0 && state == STATE_PRET) {
+		if(size == 1 && receivedBytes[0] == 0 && state == STATE_PRET) {
 			state = STATE_RAS;
+
+
 			digitalWrite(13, LOW);
 			return;
 		}
@@ -144,7 +161,7 @@ void receiveEvent(int size) {
 		/**
 		 ** Si configuration du module
 		 */
-		if(size != 2) return;
+		if(size != 2 || (state != STATE_PRET && state != STATE_ATTENTE_CONFIGURATION)) return;
 
 
 		for(int i=0; i<size;i++){
