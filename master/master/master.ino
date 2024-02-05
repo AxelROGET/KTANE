@@ -35,20 +35,18 @@ void loop() {
 				* Scan des modules connectés
 				* Lancer si tous les modules sont prêts (état 4)
 				*/
+        started = true;
 				for(int i = 1; i <= ID_MAX_MODULE; i++) {
-					if(isModuleConnected(i) && getModuleState(i) == 4) {
-						started = true;
-					} else {
+					if(!isModuleConnected(i) || getModuleState(i) != 4) {
 						started = false;
-						break;
-					}
+					} 
 				}
 
 				if(started) {
 					Serial.println("Jeu lancé");
 					for(int i = 1; i <= ID_MAX_MODULE; i++) {
 						if(isModuleConnected(i) && getModuleState(i) == 4) {
-							
+							// TODO envoyer l'état de lancement à tous les modules
 						}
 					}
 				} else {

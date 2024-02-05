@@ -19,7 +19,7 @@
 #include <Wire.h>
 
 
-char state = 3;
+char state = STATE_ATTENTE_CONFIGURATION;
 
 char wireToCut = 0;
 char nbWires = 0;
@@ -45,6 +45,9 @@ void setup() {
 	pinMode(5, INPUT_PULLUP);
 	pinMode(6, INPUT_PULLUP);
 	pinMode(7, INPUT_PULLUP);
+
+  pinMode(4, OUTPUT);
+  digitalWrite(4, HIGH);
 
 	pinMode(13, OUTPUT);
 	digitalWrite(13, LOW);
@@ -95,7 +98,7 @@ void loop() {
 	* ! MODULE ARMÉ JEU LANCÉ
 	* Vérifier que le bon foit soit débranché 
 	*/
-	else if (state == STATE_RAS) {
+	else if (state == STATE_RAS && false) {
 
 		// Si le bon fil est débranché
 		if(digitalRead(wireToCut)) {
@@ -135,10 +138,10 @@ void receiveEvent(int size) {
 		/**
 		 ** Si lancement du jeu
 		 */
-		if(size > 0 && receivedBytes[0] == 0 && state == STATE_PRET) {
+		if(size == 1 && receivedBytes[0] == 0 && state == STATE_PRET) {
 			state = STATE_RAS;
 			digitalWrite(13, LOW);
-			return;
+      exit(0); // TODO la led s'allume juste après s'être éteinte
 		}
 
 		/**
