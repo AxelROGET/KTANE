@@ -1,3 +1,5 @@
+
+
 const symboles = {
     copyright: "https://static.wikia.nocookie.net/ktane/images/0/0b/Keypad01.png",
     filledstar: "https://static.wikia.nocookie.net/ktane/images/f/f9/Keypad02.png/revision/latest?cb=20200602190650",
@@ -30,4 +32,65 @@ const symboles = {
     weirdnose: "https://static.wikia.nocookie.net/ktane/images/b/b0/Keypad29.png/revision/latest?cb=20200602191358",
     upsidedowny: "https://static.wikia.nocookie.net/ktane/images/1/16/Keypad30.png/revision/latest?cb=20200602191358",
     bt: "https://static.wikia.nocookie.net/ktane/images/2/27/Keypad31.png/revision/latest?cb=20200602191359",
+}
+
+/**
+ * @typedef {"copyright"|"filledstar"|"smileyface"|"hollowstar"|"doublek"|"omega"|"squidknife"|"pumpkin"|"hookn"|"teepee"|"six"|"squigglyn"|"at"|"ae"|"meltedthree"|"euro"|"circle"|"nwithhat"|"dragon"|"questionmark"|"paragraph"|"rightc"|"leftc"|"pitchfork"|"tripod"|"cursive"|"tracks"|"balloon"|"weirdnose"|"upsidedowny"|"bt"} Clavier_Symbole
+ */
+/** @type {Array.<Array.<Clavier_Symbole>>} */
+let manuel_clavier = [
+    ["balloon", "at", "upsidedowny", "squigglyn", "squidknife", "hookn", "leftc"],
+    ["euro", "balloon", "leftc", "cursive", "hollowstar", "hookn", "questionmark"],
+    ["copyright", "pumpkin", "cursive", "doublek", "meltedthree", "upsidedowny", "hollowstar"],
+    ["six", "paragraph", "bt", "squidknife", "doublek", "questionmark", "smileyface"],
+    ["pitchfork", "smileyface", "bt", "rightc", "paragraph", "dragon", "filledstar"],
+    ["six", "euro", "tracks", "ae", "pitchfork", "nwithhat", "omega"]
+]
+
+
+
+// Take a random array from the manuel
+let clavier = manuel_clavier[Math.floor(Math.random() * manuel_clavier.length)];
+
+// Take 4 unique symbols from the array
+let symbolesChoisis = [];
+while(symbolesChoisis.length < 4) {
+    let symbole = clavier[Math.floor(Math.random() * clavier.length)];
+    if(!symbolesChoisis.includes(symbole)) symbolesChoisis.push(symbole);
+}
+
+// Generate the SVG
+let svg = generateSVG(symbolesChoisis[0], symbolesChoisis[1], symbolesChoisis[2], symbolesChoisis[3]);
+
+
+$(() => {
+    $("body").append(svg);
+})
+
+
+function generateSVG(s1, s2, s3, s4) {
+    return `
+    <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+                
+        <!-- Module -->
+        <rect x="0" y="0" width="400" height="400" fill="#545454" stroke="black" stroke-width="2" />
+
+        <!-- Led verte en haut à droite -->
+        <circle cx="350" cy="50" r="10" stroke="black" stroke-width="2" fill="green" />
+
+        <!-- 4 boutons -->
+        <rect x="100" y="100" width="84" height="84" fill="#6d6e70" />
+        <image x="110" y="110" width="64" href="${symboles[s1]}" />
+        
+        <rect x="216" y="100" width="84" height="84" fill="#6d6e70" />
+        <image x="226" y="110" width="64" href="${symboles[s2]}" />
+        
+        <rect x="100" y="216" width="84" height="84" fill="#6d6e70" />
+        <image x="110" y="226" width="64" href="${symboles[s3]}" />
+        
+        <rect x="216" y="216" width="84" height="84" fill="#6d6e70" />
+        <image x="226" y="226" width="64" href="${symboles[s4]}" />
+      
+      </svg> 
+    `
 }
