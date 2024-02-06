@@ -91,8 +91,6 @@ void loop() {
 
 void scanModules(unsigned char * modules) {
 
-	//Serial.println("Lancement du scan des modules");
-
 	Serial.print("{ \"modules\": {");
 
 	for(unsigned char addr=1; addr <= ID_MAX_MODULE; addr++) {
