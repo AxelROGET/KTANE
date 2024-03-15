@@ -132,15 +132,19 @@ function requestSerial(button) {
                 $(button).hide();
                 // Lire les données
                 const reader = port.readable.getReader();
-                reader.read().then(function processText({ done, value }) {
-                    appendBuffer(value);
-                    reader.read().then(processText).catch((error) => {
-                        reader.read().then(processText);
+
+                function tryToReadBuffer() {
+                    reader.read().then(function processText({ done, value }) {
+                        appendBuffer(value);
+                        tryToReadBuffer();
+                    }).catch((error) => {
+                        console.error("Une erreur s'est produite", error)
+                        tryToReadBuffer();
                     })
-                }).catch((error) => {
-                    console.error("Une erreur s'est produite", error)
-                    reader.read().then(processText);
-                })
+                }
+
+                tryToReadBuffer();
+
                 writer = port.writable.getWriter();
             });
         })
