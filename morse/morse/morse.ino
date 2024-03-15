@@ -150,10 +150,15 @@ void setup() {
   //on affiche 0000 avant de commencer la partie
   display.showNumberDec(0000, true, 4, 0); 
 
-  Serial.print("Indice : ");
-  Serial.println(indice_solution);
+  Serial.print("Nombre à entrer : ");
+  Serial.println(frequence[indice_solution]);
   Serial.print("Mot : ");
   Serial.println(mot[indice_solution]);
+
+  // Code de test
+  state = STATE_RAS;
+  digitalWrite(LED, LOW);
+  afficher7segments(indice_actuel); 
 }
 
 /*
