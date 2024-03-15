@@ -107,6 +107,7 @@ void afficher7segments(char indice);
 void requestEvent();
 void receiveEvent(int);
 int boutonAppuye();
+void maj_frequence();
 
 void setup() {
   // put your setup code here, to run once:
@@ -131,7 +132,7 @@ void setup() {
 
   //LED MORSE
   pinMode(LED_MORSE,OUTPUT);
-  digitalWrite(LED_MORSE,HIGH);
+  digitalWrite(LED_MORSE,LOW);
   //FIN LED MORSE
   
   //l'état
@@ -146,49 +147,71 @@ void setup() {
   //l'indice actuel
   indice_actuel = 0;
 
-  afficher7segments(indice_actuel);
+  //on affiche 0000 avant de commencer la partie
+  display.showNumberDec(0000, true, 4, 0); 
+
+  Serial.print("Indice : ");
+  Serial.println(indice_solution);
+  Serial.print("Mot : ");
+  Serial.println(mot[indice_solution]);
 }
 
+/*
+* un '_' : 1 seconde allumé
+* un ' ' : 1 seconde éteint
+* entre deux mots : 7 secondes
+* Les signaux longs ont été remplacés par 3 courts, car un long dure 3 secondes
+*/
 void loop() {
   // put your main code here, to run repeatedly:
-  if(state == STATE_RAS || state == STATE_PRET){
+  if(state == STATE_RAS){
     //Ici affichage du mot en morse;
+    char lettre_actuelle;
+    char* morse_actuel;
+    unsigned long temps_debut;
+    unsigned long temps_fin;
+    maj_frequence();
+    
 
 
-
-
-
-    if((appui = boutonAppuye()) != 0){ //si appui sur un bouton
-      Serial.print("Appui touche : ");
-      Serial.println(appui);
-      switch(appui){
-        case 1 : //On a appuyé à gauche
-          //on décale l'indice à gauche
-          if(indice_actuel == 0) indice_actuel = NB_SOLUTIONS;
-          else indice_actuel--;
-          afficher7segments(indice_actuel);
-          break;
-
-        case 2 : //On a appuyé au milieu
-          if(indice_actuel == indice_solution) {
-            digitalWrite(LED,HIGH);
-            state = STATE_DESARME;
+    for(int i=0; i<6; i++){
+      lettre_actuelle = mot[indice_solution][i]; //on récupère le mot d'indice solution, lettre par lettre
+      morse_actuel = correspondance_morse[lettre_actuelle-'a']; //on récupère la fréquence de la lettre actuelle
+      for(int j=0; morse_actuel[j] != '\0'; j++){ //on boucle sur les caractères du code morse
+        if(morse_actuel[j] == '_'){ //Si c'est un _, on allume la LED pendant une seconde
+          temps_debut = millis();
+          temps_fin = millis();
+          digitalWrite(LED_MORSE,HIGH);
+          while(temps_fin - temps_debut < 1000){
+            maj_frequence();
+            temps_fin = millis();
           }
-          break;
-
-        case 3 : //On a appuyé à droite
-          //on décale l'indice à droite
-          if(indice_actuel == NB_SOLUTIONS) indice_actuel = 0;
-          else indice_actuel++;
-          afficher7segments(indice_actuel);
-          break;
+        } else { //sinon c'est un ' ', donc on éteint la LED pendant 1 seconde
+          temps_debut = millis();
+          temps_fin = millis();
+          digitalWrite(LED_MORSE,LOW);
+          while(temps_fin - temps_debut < 1000){
+            maj_frequence();
+            temps_fin = millis();
+          }
+        }
+      } //On a fini la lettre -> pause de 3 secondes
+      temps_debut = millis();
+      temps_fin = millis();
+      digitalWrite(LED_MORSE,LOW);
+      while(temps_fin - temps_debut < 3000){
+        maj_frequence();
+        temps_fin = millis();
       }
-      while(boutonAppuye() != 0); //on attend que l'utilisateur relâche le bouton
-      delay(100);
+    } //On a fini le mot -> pause de 7 secondes
+    temps_debut = millis();
+    temps_fin = millis();
+    digitalWrite(LED_MORSE,LOW);
+    while(temps_fin - temps_debut < 7000){
+      maj_frequence();
+      temps_fin = millis();
     }
   }
-
-
 }
 
 void requestEvent() {
@@ -212,6 +235,7 @@ void receiveEvent(int size) {
     if(size == 1 && receivedBytes[0] == 0 && state == STATE_PRET) {
       state = STATE_RAS;
       digitalWrite(LED, LOW);
+      afficher7segments(indice_actuel);
       return;
     }
   }
@@ -232,4 +256,38 @@ int boutonAppuye(){
 void afficher7segments(char indice){
   unsigned int maFrequence = frequence[indice];
   display.showNumberDec(maFrequence, true, 4, 0); 
+}
+
+//NE PAS RESTER APPUYE TROP LONGTEMPS
+void maj_frequence(){
+  if((appui = boutonAppuye()) != 0){ //si appui sur un bouton
+    Serial.print("Appui touche : ");
+    Serial.println(appui);
+    switch(appui){
+      case 1 : //On a appuyé à gauche
+        //on décale l'indice à gauche
+        if(indice_actuel == 0) indice_actuel = NB_SOLUTIONS;
+        else indice_actuel--;
+        afficher7segments(indice_actuel);
+        break;
+
+      case 2 : //On a appuyé au milieu
+        if(indice_actuel == indice_solution) {
+          digitalWrite(LED,HIGH);
+          state = STATE_DESARME;
+        } else {
+          state = STATE_ERREUR;
+        }
+        break;
+
+      case 3 : //On a appuyé à droite
+        //on décale l'indice à droite
+        if(indice_actuel == NB_SOLUTIONS) indice_actuel = 0;
+        else indice_actuel++;
+        afficher7segments(indice_actuel);
+        break;
+    }
+    while(boutonAppuye() != 0); //on attend que l'utilisateur relâche le bouton
+    delay(100);
+  }
 }
