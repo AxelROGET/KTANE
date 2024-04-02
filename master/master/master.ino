@@ -1,5 +1,10 @@
 #include <Wire.h> 
 #include <Arduino.h>
+#include <TM1637Display.h>
+#include "afficheur.h"
+
+#define CLK 6
+#define DIO 5
 
 #define START 1
 
@@ -23,6 +28,11 @@ void setup() {
 
 	Serial.begin(9600);
 	// Serial.println("KTANE");
+
+  TM1637Display display(CLK, DIO);
+
+  display.setBrightness(0x0f);
+  display.setSegments(defu);
 }
 
 void loop() {

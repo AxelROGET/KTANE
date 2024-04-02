@@ -98,8 +98,8 @@ $(function () {
     }).appendTo("body");
 
     $("#ready button").on("click", function() {
-        // sendSerial(0x01);
-        configureModule(1, 0); // TODO pour la démo
+        sendSerial(0x01);
+        // configureModule(1, 0); // TODO pour la démo
     })
 });
 
