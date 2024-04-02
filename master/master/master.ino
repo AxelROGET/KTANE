@@ -45,13 +45,14 @@ void loop() {
 				* Scan des modules connectés
 				* Lancer si tous les modules sont prêts (état 4)
 				*/
+        started = true;
 				for(int i = 1; i <= ID_MAX_MODULE; i++) {
 					if(isModuleConnected(i) && getModuleState(i) == 4) {
 						started = true;
 					} else if(isModuleConnected(i)) {
 						started = false;
-            Serial.print("Lancement impossible. Cause : module");
-            Serial.println(i);
+						Serial.print("Lancement impossible. Cause : module");
+						Serial.println(i);
 						break;
 					}
 				}
@@ -61,8 +62,9 @@ void loop() {
 					for(int i = 1; i <= ID_MAX_MODULE; i++) {
 						if(isModuleConnected(i) && getModuleState(i) == 4) {
 							Wire.beginTransmission(i);
-              Wire.write(0);
-              Wire.endTransmission();
+							Wire.write(0);
+							Wire.endTransmission();
+							// TODO envoyer l'état de lancement à tous les modules
 						}
 					}
 				} else {
