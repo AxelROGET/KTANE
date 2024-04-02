@@ -138,8 +138,25 @@ function requestSerial(button) {
                         appendBuffer(value);
                         tryToReadBuffer();
                     }).catch((error) => {
-                        console.error("Une erreur s'est produite", error)
-                        tryToReadBuffer();
+
+                        switch(error.stack) {
+                            case "Error: Buffer overrun":
+                                alert("Buffer overrun");
+                                window.location.reload();
+                                break;
+
+                            case "Error: The device has been lost.":
+                                alert("La bombe a été déconnectée.");
+                                window.location.reload();
+                                break;
+
+                            default:
+                                console.error("Une erreur s'est produite lors de la lecture du port série", error);
+                                console.log(JSON.stringify(error, null, 2));
+                                setTimeout(tryToReadBuffer, 500);
+                                break;
+                        }
+                        
                     })
                 }
 
