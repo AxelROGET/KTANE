@@ -48,8 +48,10 @@ void loop() {
 				for(int i = 1; i <= ID_MAX_MODULE; i++) {
 					if(isModuleConnected(i) && getModuleState(i) == 4) {
 						started = true;
-					} else {
+					} else if(isModuleConnected(i)) {
 						started = false;
+            Serial.print("Lancement impossible. Cause : module");
+            Serial.println(i);
 						break;
 					}
 				}
@@ -58,7 +60,9 @@ void loop() {
 					Serial.println("Jeu lancé");
 					for(int i = 1; i <= ID_MAX_MODULE; i++) {
 						if(isModuleConnected(i) && getModuleState(i) == 4) {
-							
+							Wire.beginTransmission(i);
+              Wire.write(0);
+              Wire.endTransmission();
 						}
 					}
 				} else {
