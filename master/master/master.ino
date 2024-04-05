@@ -5,6 +5,15 @@
 
 #define CLK 6
 #define DIO 5
+#define BUZZER 7
+
+
+#define STATE_RAS 0 
+#define STATE_DESARME 1 
+#define STATE_ERREUR 2
+#define STATE_ATTENTE_CONFIGURATION 3
+#define STATE_PRET 4
+#define STATE_DECONNECTE 255
 
 #define START 1
 
@@ -14,11 +23,26 @@ bool started = false;
 unsigned char buffer[100];
 unsigned char index = 0;
 unsigned char modulesConnected[ID_MAX_MODULE+1];
+// Variables relatives au jeu
+unsigned char nbErreurs = 0;
+unsigned char nbSecondes = 180;
+unsigned int dureeSeconde = 1000;
+unsigned int erreurs = 0; // Explosion si le nombre d'erreurs dépasse 2
+
+// Variables de temps 
+unsigned long lastScanModules = 0;
+unsigned long lastRefreshAfficheur = 0;
+
+
 
 
 void scanModules(unsigned char * modules);
 bool isModuleConnected(unsigned char);
 unsigned char getModuleState(unsigned char module_addr);
+void updateModulesState(unsigned char * modules);
+
+
+TM1637Display display(CLK, DIO);
 
 void setup() {
 
@@ -28,8 +52,6 @@ void setup() {
 
 	Serial.begin(9600);
 	// Serial.println("KTANE");
-
-  TM1637Display display(CLK, DIO);
 
   display.setBrightness(0x0f);
   display.setSegments(defu);
@@ -51,7 +73,7 @@ void loop() {
 						started = true;
 					} else if(isModuleConnected(i)) {
 						started = false;
-						Serial.print("Lancement impossible. Cause : module");
+						Serial.print("Lancement impossible. Cause : module ");
 						Serial.println(i);
 						break;
 					}
@@ -64,7 +86,6 @@ void loop() {
 							Wire.beginTransmission(i);
 							Wire.write(0);
 							Wire.endTransmission();
-							// TODO envoyer l'état de lancement à tous les modules
 						}
 					}
 				} else {
@@ -104,6 +125,65 @@ void loop() {
 		scanModules(modulesConnected);
 
     delay(1000);
+	} else {
+
+		// * Scan de tous les modules connectés & configurés (max 10 fois / seconde)
+		// Si tous les modules sont à l'état 1 : fin du jeu + afficher "Defu" sur l'afficheur 
+		// Si un des modules est à l'état Erreur : incrémenter le nb d'erreurs 
+
+		if(millis() - lastScanModules > 100) {
+			updateModulesState(modulesConnected);
+			lastScanModules = millis();
+
+			bool defused = true;
+
+			for(unsigned char i=1; i<=ID_MAX_MODULE; i++) {
+				if(modulesConnected[i] == STATE_ERREUR) {
+					nbErreurs++;
+				} 
+				// TODO gérer les erreurs
+				
+				if(modulesConnected[i] != STATE_DESARME && modulesConnected[i] != STATE_DECONNECTE) {
+					defused = false;
+				}
+			}
+
+			if(defused) {
+				display.setSegments(defu);
+				Serial.println("Defused");
+				started = false;
+			}
+		}
+
+		// * décrémenter le nombre de secondes et actualiser l'affichage toutes les dureeSeconde
+		if(millis() - lastRefreshAfficheur > dureeSeconde) {
+			nbSecondes--;
+			lastRefreshAfficheur = millis();
+			// Passer les secondes en min:sec
+			unsigned char min = nbSecondes / 60;
+			unsigned char sec = nbSecondes % 60;
+			display.showNumberDecEx(min*100 + sec, 0b11100000, true);
+			// Activer le buzzer un court instant
+			digitalWrite(BUZZER, HIGH);
+			delay(20);
+			digitalWrite(BUZZER, LOW);
+		}
+
+  }
+}
+
+void updateModulesState(unsigned char * modules) {
+	for(unsigned char addr=1; addr <= ID_MAX_MODULE; addr++) {
+		// Si le module était connecté et l'est toujours, mettre à jour son état
+		// Si le module était connecté et ne l'est plus, mettre son état en erreur (2)
+		// Si le module n'était pas connecté, le laisser en état STATE_DECONNECTE
+		if(modules[addr] != STATE_DECONNECTE && isModuleConnected(addr)) {
+			modules[addr] = getModuleState(addr);
+		}
+		
+		else if(modules[addr] != STATE_DECONNECTE && !isModuleConnected(addr)) {
+			modules[addr] = STATE_ERREUR;
+		} 
 	}
 }
 
