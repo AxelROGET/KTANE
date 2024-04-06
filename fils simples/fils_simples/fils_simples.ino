@@ -119,18 +119,19 @@ void loop() {
   
 	else if (state == STATE_RAS) {
 
-		// Si le bon fil est débranché
-		if(digitalRead(wireToCut)) {
-			state = STATE_DESARME;
-			digitalWrite(13, HIGH);
-		}
-
 		for(int wire=1; wire<=nbWires; wire++){
 			// Si le fil est nouvellement débranché (erreur commise)
-			if(wireToCut != wire && digitalRead(wire+1) && !wiresState[wire]) {
+			if(wireToCut != wire && digitalRead(wire+1) && !wiresState[wire-1]) {
 				state = STATE_ERREUR;
+				return;
 			}
-			wiresState[wire] = digitalRead(wire+1);
+			wiresState[wire-1] = digitalRead(wire+1);
+		}
+
+		// Si le bon fil est débranché
+		if(digitalRead(wireToCut+1)) {
+			state = STATE_DESARME;
+			digitalWrite(13, HIGH);
 		}
 
 	}

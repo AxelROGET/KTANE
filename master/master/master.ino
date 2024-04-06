@@ -81,14 +81,6 @@ void loop() {
 				*/
         		started = true;
 				for(int i = 1; i <= ID_MAX_MODULE; i++) {
-					/* if(isModuleConnected(i) && getModuleState(i)   	== 4) {
-						started = true;
-					} else if(isModuleConnected(i)) {
-						started = false;
-						Serial.print("Lancement impossible. Cause : module ");
-						Serial.println(i);
-						break;
-					} */
 					if(isModuleConnected(i) && getModuleState(i) != STATE_PRET) {
 						started = false;
 						Serial.print("Lancement impossible. Cause : module ");
@@ -96,6 +88,7 @@ void loop() {
 					}
 				}
 
+				// * Lancer le jeu
 				if(started) {
 					Serial.println("Jeu lancé");
 					for(int i = 1; i <= ID_MAX_MODULE; i++) {
@@ -105,6 +98,8 @@ void loop() {
 							Wire.endTransmission();
 						}
 					}
+					lastRefreshAfficheur = millis();
+					lastScanModules = millis();
 				} else {
 					Serial.println("Jeu non lancé");
 				}
@@ -150,6 +145,7 @@ void loop() {
 
 		if(millis() - lastScanModules > 100) {
 			updateModulesState(modulesConnected);
+			// scanModules(modulesConnected);
 			lastScanModules = millis();
 
 			bool defused = true;
@@ -157,8 +153,27 @@ void loop() {
 			for(unsigned char i=1; i<=ID_MAX_MODULE; i++) {
 				if(modulesConnected[i] == STATE_ERREUR) {
 					nbErreurs++;
+
+					if(nbErreurs == 1) {
+						digitalWrite(LED_ERREUR_1, HIGH);
+						dureeSeconde = 850;
+					} else if(nbErreurs == 2) {
+						dureeSeconde = 700;
+						digitalWrite(LED_ERREUR_2, HIGH);
+					} else if(nbErreurs > 2) {
+						display.setSegments(lost);
+						Serial.println("Explosion");
+						started = false;
+						for(int i=0; i<5; i++) {
+              digitalWrite(BUZZER, HIGH);
+              delay(50);
+              digitalWrite(BUZZER, LOW);
+              delay(100);
+            }
+						return;
+					}
+
 				} 
-				// TODO gérer les erreurs
 				
 				if(modulesConnected[i] != STATE_DESARME && modulesConnected[i] != STATE_DECONNECTE) {
 					defused = false;
@@ -169,13 +184,14 @@ void loop() {
 				display.setSegments(defu);
 				Serial.println("Defused");
 				started = false;
+				return;
 			}
 		}
 
 		// * décrémenter le nombre de secondes et actualiser l'affichage toutes les dureeSeconde
 		if(millis() - lastRefreshAfficheur > dureeSeconde) {
 			nbSecondes--;
-			lastRefreshAfficheur = millis();
+			lastRefreshAfficheur += dureeSeconde;
 			// Passer les secondes en min:sec
 			unsigned char min = nbSecondes / 60;
 			unsigned char sec = nbSecondes % 60;
@@ -192,15 +208,14 @@ void loop() {
 void updateModulesState(unsigned char * modules) {
 	for(unsigned char addr=1; addr <= ID_MAX_MODULE; addr++) {
 		// Si le module était connecté et l'est toujours, mettre à jour son état
-		// Si le module était connecté et ne l'est plus, mettre son état en erreur (2)
 		// Si le module n'était pas connecté, le laisser en état STATE_DECONNECTE
 		if(modules[addr] != STATE_DECONNECTE && isModuleConnected(addr)) {
 			modules[addr] = getModuleState(addr);
 		}
 		
-		else if(modules[addr] != STATE_DECONNECTE && !isModuleConnected(addr)) {
+		/* else if(modules[addr] != STATE_DECONNECTE && !isModuleConnected(addr)) {
 			modules[addr] = STATE_ERREUR;
-		} 
+		}  */
 	}
 }
 
