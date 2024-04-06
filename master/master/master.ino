@@ -3,9 +3,15 @@
 #include <TM1637Display.h>
 #include "afficheur.h"
 
+// A5 -> SCL
+// A4 -> SDA
+
 #define CLK 6
 #define DIO 5
 #define BUZZER 7
+
+#define LED_ERREUR_1 3
+#define LED_ERREUR_2 4
 
 
 #define STATE_RAS 0 
@@ -48,6 +54,10 @@ void setup() {
 
   for(unsigned char i=1; i<ID_MAX_MODULE; i++) modulesConnected[i] = 0;
 
+  pinMode(BUZZER, OUTPUT);
+  pinMode(LED_ERREUR_1, OUTPUT);
+  pinMode(LED_ERREUR_2, OUTPUT);
+
   Wire.begin();
 
 	Serial.begin(9600);
@@ -67,15 +77,20 @@ void loop() {
 				* Scan des modules connectés
 				* Lancer si tous les modules sont prêts (état 4)
 				*/
-        started = true;
+        		started = true;
 				for(int i = 1; i <= ID_MAX_MODULE; i++) {
-					if(isModuleConnected(i) && getModuleState(i) == 4) {
+					/* if(isModuleConnected(i) && getModuleState(i)   	== 4) {
 						started = true;
 					} else if(isModuleConnected(i)) {
 						started = false;
 						Serial.print("Lancement impossible. Cause : module ");
 						Serial.println(i);
 						break;
+					} */
+					if(isModuleConnected(i) && getModuleState(i) != STATE_PRET) {
+						started = false;
+						Serial.print("Lancement impossible. Cause : module ");
+						Serial.println(i);
 					}
 				}
 

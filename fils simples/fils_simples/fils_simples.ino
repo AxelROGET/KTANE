@@ -15,6 +15,8 @@
 
 #define BUFFER_SIZE 4
 
+#define OUTPUT_INIT 12
+
 #include <Arduino.h>
 #include <Wire.h>
 
@@ -52,6 +54,11 @@ void setup() {
 
 	pinMode(13, OUTPUT);
 	digitalWrite(13, LOW);
+
+  pinMode(OUTPUT_INIT, OUTPUT);
+  digitalWrite(OUTPUT_INIT, HIGH);
+  delay(50);
+  digitalWrite(OUTPUT_INIT, LOW);
 
   state = 3;
 }
@@ -109,8 +116,8 @@ void loop() {
 	* Vérifier que le bon foit soit débranché 
 	*/
 
-  /*
-	else if (state == STATE_RAS) {
+  
+	/* else if (state == STATE_RAS) {
 
 		// Si le bon fil est débranché
 		if(digitalRead(wireToCut)) {
@@ -126,8 +133,8 @@ void loop() {
 			wiresState[wire] = digitalRead(wire+1);
 		}
 
-	}
-  */
+	} */
+ 
 
 
   delay(20);
