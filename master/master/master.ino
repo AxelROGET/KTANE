@@ -65,6 +65,8 @@ void setup() {
 
   display.setBrightness(0x0f);
   display.setSegments(defu);
+
+  Wire.setWireTimeout(500, true);
 }
 
 void loop() {

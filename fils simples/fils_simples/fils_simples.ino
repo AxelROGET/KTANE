@@ -117,7 +117,7 @@ void loop() {
 	*/
 
   
-	/* else if (state == STATE_RAS) {
+	else if (state == STATE_RAS) {
 
 		// Si le bon fil est débranché
 		if(digitalRead(wireToCut)) {
@@ -133,7 +133,7 @@ void loop() {
 			wiresState[wire] = digitalRead(wire+1);
 		}
 
-	} */
+	}
  
 
 
@@ -167,7 +167,6 @@ void receiveEvent(int size) {
 
 
 			digitalWrite(13, LOW);
-      exit(0); // TODO la led s'allume juste après s'être éteinte
 		}
 
 		/**
