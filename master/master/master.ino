@@ -46,6 +46,7 @@ void scanModules(unsigned char * modules);
 bool isModuleConnected(unsigned char);
 unsigned char getModuleState(unsigned char module_addr);
 void updateModulesState(unsigned char * modules);
+void gameOver();
 
 
 TM1637Display display(CLK, DIO);
@@ -145,7 +146,6 @@ void loop() {
 
 		if(millis() - lastScanModules > 100) {
 			updateModulesState(modulesConnected);
-			// scanModules(modulesConnected);
 			lastScanModules = millis();
 
 			bool defused = true;
@@ -161,15 +161,7 @@ void loop() {
 						dureeSeconde = 700;
 						digitalWrite(LED_ERREUR_2, HIGH);
 					} else if(nbErreurs > 2) {
-						display.setSegments(lost);
-						Serial.println("Explosion");
-						started = false;
-						for(int i=0; i<5; i++) {
-              digitalWrite(BUZZER, HIGH);
-              delay(50);
-              digitalWrite(BUZZER, LOW);
-              delay(100);
-            }
+						gameOver();
 						return;
 					}
 
@@ -190,6 +182,12 @@ void loop() {
 
 		// * décrémenter le nombre de secondes et actualiser l'affichage toutes les dureeSeconde
 		if(millis() - lastRefreshAfficheur > dureeSeconde) {
+
+			if(nbSecondes == 0) {
+				gameOver();
+				return;
+			}
+
 			nbSecondes--;
 			lastRefreshAfficheur += dureeSeconde;
 			// Passer les secondes en min:sec
@@ -216,6 +214,18 @@ void updateModulesState(unsigned char * modules) {
 		/* else if(modules[addr] != STATE_DECONNECTE && !isModuleConnected(addr)) {
 			modules[addr] = STATE_ERREUR;
 		}  */
+	}
+}
+
+void gameOver() {
+	display.setSegments(lost);
+	Serial.println("Explosion");
+	started = false;
+	for(int i=0; i<5; i++) {
+		digitalWrite(BUZZER, HIGH);
+		delay(50);
+		digitalWrite(BUZZER, LOW);
+		delay(100);
 	}
 }
 
