@@ -34,6 +34,7 @@ bool wiresState[6];
 
 void requestEvent();
 void receiveEvent(int);
+int addrWire(int);
 
 void setup() {
 	Wire.begin(MODULE_ADDR);
@@ -42,15 +43,10 @@ void setup() {
 
 	Serial.begin(9600);
 
-	pinMode(2, INPUT_PULLUP);
-	pinMode(3, INPUT_PULLUP);
-	pinMode(4, INPUT_PULLUP);
-	pinMode(5, INPUT_PULLUP);
-	pinMode(6, INPUT_PULLUP);
-	pinMode(7, INPUT_PULLUP);
+	for(int i=0; i<6; i++) pinMode(addrWire(i), INPUT_PULLUP);
 
-  pinMode(4, OUTPUT);
-  digitalWrite(4, HIGH);
+	pinMode(4, OUTPUT);
+	digitalWrite(4, HIGH);
 
 	pinMode(13, OUTPUT);
 	digitalWrite(13, LOW);
@@ -61,6 +57,18 @@ void setup() {
   digitalWrite(OUTPUT_INIT, LOW);
 
   state = 3;
+}
+
+int addrWire(int wire) {
+	switch(wire) {
+		case 0: return 5;
+		case 1: return 6;
+		case 2: return 7;
+		case 3: return 8;
+		case 4: return 9;
+		case 5: return 10;
+		default: return -1;
+	}
 }
 
 void loop() {
@@ -84,8 +92,14 @@ void loop() {
 			Serial.println(digitalRead(i+2));
       */
 
-			if(!digitalRead(i+2) && i >= nbWires) flag=false;
-			else if(digitalRead(i+2) && i < nbWires) flag=false;
+			// if(!digitalRead(i+2) && i >= nbWires) flag=false;
+			// else if(digitalRead(i+2) && i < nbWires) flag=false;
+			if(!digitalRead(addrWire(i)) && i >= nbWires) {
+        flag=false;
+      }
+			else if(digitalRead(addrWire(i)) && i < nbWires) {
+        flag=false;  
+      }
 
 		}
 
@@ -97,7 +111,8 @@ void loop() {
 			digitalWrite(13, HIGH);
 			
 			for(int i=0; i<6; i++) {
-				wiresState[i] = digitalRead(i+2);
+				// wiresState[i] = digitalRead(i+2);
+				wiresState[i] = digitalRead(addrWire(i));
 			}
 
 		} 
@@ -121,15 +136,26 @@ void loop() {
 
 		for(int wire=1; wire<=nbWires; wire++){
 			// Si le fil est nouvellement débranché (erreur commise)
-			if(wireToCut != wire && digitalRead(wire+1) && !wiresState[wire-1]) {
+			/* if(wireToCut != wire && digitalRead(wire+1) && !wiresState[wire-1]) {
 				state = STATE_ERREUR;
 				return;
 			}
-			wiresState[wire-1] = digitalRead(wire+1);
+			wiresState[wire-1] = digitalRead(wire+1); */
+
+			if(wireToCut != wire && digitalRead(addrWire(wire-1)) && !wiresState[wire-1]) {
+				state = STATE_ERREUR;
+				return;
+			}
+			wiresState[wire-1] = digitalRead(addrWire(wire-1));
 		}
 
 		// Si le bon fil est débranché
-		if(digitalRead(wireToCut+1)) {
+		/* if(digitalRead(wireToCut+1)) {
+			state = STATE_DESARME;
+			digitalWrite(13, HIGH);
+		} */
+
+		if(digitalRead(addrWire(wireToCut-1))) {
 			state = STATE_DESARME;
 			digitalWrite(13, HIGH);
 		}
