@@ -70,7 +70,8 @@ function removeModuleConnected(id) {
  * ! Refresh modules div
  */
 function refreshModulesDiv() {
-    $("#modules").html($("#modules").html())
+    // $("#modules").html($("#modules").html())
+    $("#modules").clone(true).appendTo("#modules");
 }
 
 function configureModule(addr, ...data) {

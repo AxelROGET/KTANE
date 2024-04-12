@@ -11,7 +11,7 @@ class Morse extends Module{
     }
 
     getDefaultSvg() {
-        console.log("flag");
+        console.log("flagMorse");
         let coordonnees_x_svg = 150;
         let coordonnees_y_svg = 250;
         let quatre_sept_segment = "";
@@ -51,7 +51,7 @@ class Morse extends Module{
         <rect x="${coordonnees_x_svg+25+25+25}" y="${coordonnees_y_svg +2}" width="2" height="17" fill="#F00" />
         <rect x="${coordonnees_x_svg+2+25+25+25}" y="${coordonnees_y_svg + 19}" width="17" height="2" fill="#F00" />
         `;
-        document.getElementById("1").innerHTML = quatre_sept_segment;
+        // document.getElementById("1").innerHTML = quatre_sept_segment;
         return `
         <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
                     
@@ -74,7 +74,7 @@ class Morse extends Module{
         <!--bouton tx -->
         <rect x="125" y="300" width="150" height="42" fill="#6d6e70" />
         <text id="TX" x="190" y="325">TX</text>
-        <svg id="1" xmlns="http://www.w3.org/2000/svg" width="300" height="1500"></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="300" height="1500">${quatre_sept_segment}</svg>
     
         </svg> 
         `

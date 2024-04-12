@@ -137,7 +137,9 @@ class Fils_Simples extends Module {
 
         svg.off("click");
 
-        refreshModulesDiv();
+        // refreshModulesDiv();
+        // svg.replaceWith($(svg).clone(true));
+        svg.html(svg.html())
 
         configureModule(this.id, this.solution, this.nbFils);
 

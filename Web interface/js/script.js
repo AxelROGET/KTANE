@@ -36,7 +36,7 @@ function traitementBuffer(data) {
 
             Object.keys(json.modules).forEach(id => {
                 // TODO si un module est déconnecté reconnecté sans qu'il soit détecté, renvoyer sa configuration
-                
+                console.log(`Module : ${id} - Etat : ${json.modules[id]}`)
                 /**
                  ** Si le module a été déconnecté, on le supprime de la page
                  */
@@ -55,6 +55,8 @@ function traitementBuffer(data) {
 
                     // Ajouter le SVG par défaut :
                     let svg = $(getModuleConnected(id).getDefaultSvg()); 
+
+                    console.log(svg);
                     // Append le SVG avec en data-id l'id du module
                     svg.attr("data-id", id)
                     .on("click", function() {

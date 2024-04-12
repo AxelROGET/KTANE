@@ -143,10 +143,14 @@ void loop() {
 			wiresState[wire-1] = digitalRead(wire+1); */
 
 			if(wireToCut != wire && digitalRead(addrWire(wire-1)) && !wiresState[wire-1]) {
+        Serial.print("Mise en erreur pour le fil à l'addr");
+        Serial.println(addrWire(wire-1));
 				state = STATE_ERREUR;
+        wiresState[wire-1] = HIGH;
 				return;
 			}
-			wiresState[wire-1] = digitalRead(addrWire(wire-1));
+
+			// wiresState[wire-1] = digitalRead(addrWire(wire-1));
 		}
 
 		// Si le bon fil est débranché
@@ -172,6 +176,7 @@ void requestEvent() {
 
 	if(state == STATE_ERREUR) {
 		state = STATE_RAS;
+    Serial.println("Remise en state RAS");
 	} 
 }
 

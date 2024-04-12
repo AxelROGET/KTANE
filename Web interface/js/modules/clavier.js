@@ -146,7 +146,9 @@ class Clavier extends Module{
         
         svg.html(str);
 
-        refreshModulesDiv();
+        svg.css("cursor", "default");
+
+        svg.html(svg.html());
         
         
     }

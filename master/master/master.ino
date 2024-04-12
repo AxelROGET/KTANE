@@ -53,7 +53,7 @@ TM1637Display display(CLK, DIO);
 
 void setup() {
 
-  for(unsigned char i=1; i<ID_MAX_MODULE; i++) modulesConnected[i] = 0;
+  for(unsigned char i=1; i<ID_MAX_MODULE; i++) modulesConnected[i] = STATE_DECONNECTE;
 
   pinMode(BUZZER, OUTPUT);
   pinMode(LED_ERREUR_1, OUTPUT);
@@ -169,6 +169,10 @@ void loop() {
 				
 				if(modulesConnected[i] != STATE_DESARME && modulesConnected[i] != STATE_DECONNECTE) {
 					defused = false;
+					Serial.print("Module non désarmé : ");
+					Serial.print(i);
+					Serial.print(" - ");
+					Serial.println(modulesConnected[i]);
 				}
 			}
 
@@ -245,7 +249,7 @@ void scanModules(unsigned char * modules) {
       Serial.print(getModuleState(addr));
       Serial.print("\"");
 		} else {
-			modules[addr] = 0;
+			modules[addr] = STATE_DECONNECTE;
       Serial.print("\"-1\"");
 		}
 
