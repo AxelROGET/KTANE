@@ -36,7 +36,6 @@ function traitementBuffer(data) {
 
             Object.keys(json.modules).forEach(id => {
                 // TODO si un module est déconnecté reconnecté sans qu'il soit détecté, renvoyer sa configuration
-                console.log(`Module : ${id} - Etat : ${json.modules[id]}`)
                 /**
                  ** Si le module a été déconnecté, on le supprime de la page
                  */
