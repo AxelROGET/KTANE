@@ -24,7 +24,7 @@ function traitementBuffer(data) {
         var json = JSON.parse(string);
         console.log(json);
 
-        $("#debug").html(json.modules['1'])
+        // $("#debug").html(json.modules['1'])
 
         /**
          * ! ETATS DES MODULES
