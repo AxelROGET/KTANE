@@ -87,10 +87,20 @@ function traitementBuffer(data) {
 
         }
     } catch {
-        console.error("Erreur lors du traitement du buffer");
-        console.log(string);
+
+        if(string == "Explosion") {
+            soundExplosion();
+        } else {
+            console.error("Erreur lors de la lecture du buffer");
+            console.log(string);
+        }
     }
 
+}
+
+function soundExplosion() {
+    var audio = new Audio("ressources/explosion.mp3");
+    audio.play();
 }
 
 $(function () {
