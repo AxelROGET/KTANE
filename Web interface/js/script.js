@@ -9,6 +9,7 @@ const STATE_ERREUR = 2;
 const STATE_ATTENTE_CONFIGURATION = 3;
 const STATE_PRET = 4;
 
+const SOUND = false;
 
 
 /**
@@ -99,6 +100,7 @@ function traitementBuffer(data) {
 }
 
 function soundExplosion() {
+    if(!SOUND) return;
     var audio = new Audio("ressources/explosion.mp3");
     audio.play();
 }
