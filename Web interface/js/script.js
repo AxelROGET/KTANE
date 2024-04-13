@@ -100,8 +100,17 @@ $(function () {
 
     $("#ready button").on("click", function() {
         sendSerial(0x01);
-        // configureModule(1, 0); // TODO pour la démo
     })
+
+    $("#config select[name=temps_jeu]").on("change", function() {
+        console.log($(this).val());
+        sendSerial(0,0,0,parseInt($(this).val())); 
+    });
+
+    $("#config select[name=max_erreurs]").on("change", function() {
+        console.log($(this).val());
+        sendSerial(0,0,1,parseInt($(this).val())); 
+    });
 });
 
 /**

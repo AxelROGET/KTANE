@@ -31,7 +31,8 @@ unsigned char index = 0;
 unsigned char modulesConnected[ID_MAX_MODULE+1];
 // Variables relatives au jeu
 unsigned char nbErreurs = 0;
-unsigned char nbSecondes = 180;
+unsigned char nbMaxErreurs = 2;
+int nbSecondes = 180;
 unsigned int dureeSeconde = 1000;
 unsigned int erreurs = 0; // Explosion si le nombre d'erreurs dépasse 2
 
@@ -118,20 +119,49 @@ void loop() {
 						index++;
 				}
 
-				Serial.print("Addr : ");
-        		Serial.println((short int)addr);
-				Serial.println("Values : ");
-				for(int i = 1; i < index; i++) {
-						Serial.println((short int)values[i]);
-				}
+				if(addr == 0) {
+					// ! Configuration du module Maître
+					// * SendSerial(0, 0, <mode>, <value>)
+					// mode 0 : nombre de secondes/30
+					// mode 1 : nombre max d'erreurs (0-2)
 
-				/**
-				 ** Envoyer les valeurs au module addr
-				 * TODO : vérifier que le module est bien connecté en I2C 
-				*/
-				Wire.beginTransmission(addr);
-				Wire.write(values, index);
-				Wire.endTransmission();
+					if(values[0] == 0) {
+						nbSecondes = (int) values[1] * 30;
+						Serial.print("Nombre de secondes : ");
+						Serial.println(nbSecondes);
+
+						// * Actualiser l'afficheur
+						int min = nbSecondes / 60;
+						int sec = nbSecondes % 60;
+						display.showNumberDecEx(min*100 + sec, 0b11100000, true);
+					} else if(values[0] == 1) {
+						nbMaxErreurs = values[1];
+						Serial.print("Nombre max d'erreurs : ");
+						Serial.println((short int)nbMaxErreurs);
+
+						// * Actualiser les LEDs
+						digitalWrite(LED_ERREUR_1, LOW);
+						digitalWrite(LED_ERREUR_2, LOW);
+						if(nbMaxErreurs <= 1) digitalWrite(LED_ERREUR_1, HIGH);
+						if(nbMaxErreurs == 0) digitalWrite(LED_ERREUR_2, HIGH);
+
+					}
+				} else {
+					Serial.print("Addr : ");
+					Serial.println((short int)addr);
+					Serial.println("Values : ");
+					for(int i = 1; i < index; i++) {
+							Serial.println((short int)values[i]);
+					}
+
+					/**
+					 ** Envoyer les valeurs au module addr
+					* TODO : vérifier que le module est bien connecté en I2C 
+					*/
+					Wire.beginTransmission(addr);
+					Wire.write(values, index);
+					Wire.endTransmission();
+				}
 			}
 		}
 
@@ -154,7 +184,7 @@ void loop() {
 				if(modulesConnected[i] == STATE_ERREUR) {
 					nbErreurs++;
 
-					if(nbErreurs == 1) {
+					/* if(nbErreurs == 1) {
 						digitalWrite(LED_ERREUR_1, HIGH);
 						dureeSeconde = 850;
 					} else if(nbErreurs == 2) {
@@ -163,16 +193,38 @@ void loop() {
 					} else if(nbErreurs > 2) {
 						gameOver();
 						return;
+					} */
+
+					char errRestantes = nbMaxErreurs - nbErreurs;
+
+					if(errRestantes < 0) {
+						gameOver();
+						return;
 					}
+
+					if(errRestantes == 0) {
+						digitalWrite(LED_ERREUR_1, HIGH);
+						digitalWrite(LED_ERREUR_2, HIGH);
+					} else if(errRestantes == 1) {
+						digitalWrite(LED_ERREUR_1, HIGH);
+						digitalWrite(LED_ERREUR_2, LOW);
+					} else if(errRestantes == 2) {
+						digitalWrite(LED_ERREUR_1, LOW);
+						digitalWrite(LED_ERREUR_2, LOW);
+					}
+
+					dureeSeconde = 1000 - nbErreurs * (450 - 150 * nbMaxErreurs);
+
+
 
 				} 
 				
 				if(modulesConnected[i] != STATE_DESARME && modulesConnected[i] != STATE_DECONNECTE) {
 					defused = false;
-					Serial.print("Module non désarmé : ");
+					/* Serial.print("Module non désarmé : ");
 					Serial.print(i);
 					Serial.print(" - ");
-					Serial.println(modulesConnected[i]);
+					Serial.println(modulesConnected[i]); */
 				}
 			}
 
@@ -195,8 +247,8 @@ void loop() {
 			nbSecondes--;
 			lastRefreshAfficheur += dureeSeconde;
 			// Passer les secondes en min:sec
-			unsigned char min = nbSecondes / 60;
-			unsigned char sec = nbSecondes % 60;
+			int min = nbSecondes / 60;
+			int sec = nbSecondes % 60;
 			display.showNumberDecEx(min*100 + sec, 0b11100000, true);
 			// Activer le buzzer un court instant
 			digitalWrite(BUZZER, HIGH);
